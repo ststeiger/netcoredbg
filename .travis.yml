@@ -38,6 +38,7 @@ matrix:
           - sourceline: 'deb http://download.tizen.org/tools/latest-release/Ubuntu_14.04/ /'
     - os: osx
       osx_image: xcode9.4
+    - os: windows
 
 env:
   global:
@@ -60,6 +61,8 @@ cache:
     - coreclr/bin/Product/Linux.x64.Release/lib
     - coreclr/bin/Product/OSX.x64.Release/inc
     - coreclr/bin/Product/OSX.x64.Release/lib
+    - coreclr/bin/Product/Windows_NT.x64.Release/inc
+    - coreclr/bin/Product/Windows_NT.x64.Release/lib
     - coreclr/src/inc
     - coreclr/src/pal/inc
     - coreclr/src/pal/inc/rt
@@ -92,24 +95,36 @@ install:
       if [ -z "$TIZEN" ]; then
         # Download .NET CLI
         export DOTNET_INSTALL_DIR="$PWD/.dotnetcli"
-        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel "$CLI_VERSION" --install-dir "$DOTNET_INSTALL_DIR"
+        if [ ${TRAVIS_OS_NAME} = 'windows' ]; then
+          curl -o dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
+          powershell.exe -Help
+          powershell.exe -File dotnet-install.ps1 -Channel "$CLI_VERSION" -InstallDir "$DOTNET_INSTALL_DIR"
+        else
+          curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel "$CLI_VERSION" --install-dir "$DOTNET_INSTALL_DIR"
+        fi
         export PATH="$DOTNET_INSTALL_DIR:$PATH"
         # Set CoreCLR binaries output directory name and (for linux) specific compiler versions
         if [ ${TRAVIS_OS_NAME} = 'linux' ]; then
           export CORECLR_PRODUCT=Linux.x64.Release CC=clang-3.9 CXX=clang++-3.9
         elif [ ${TRAVIS_OS_NAME} = 'osx' ]; then
           export CORECLR_PRODUCT=OSX.x64.Release
+        elif [ ${TRAVIS_OS_NAME} = 'windows' ]; then
+          export CORECLR_PRODUCT=Windows_NT.x64.Release
         fi
         # Make CoreCLR sources and binaries available for build script
         if [ ! -f "coreclr/src/inc/.cache_valid" ]; then
           # Invalidate cache and build CoreCLR, put dbgshim library into cached directory
           rm -rf coreclr
           git clone --depth 1 https://github.com/dotnet/coreclr -b "release/$CLI_VERSION" && cd coreclr
-          ./build.sh ninja skiptests skipnuget release && cp bin/Product/$CORECLR_PRODUCT/libdbgshim.* bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
+          if [ ${TRAVIS_OS_NAME} = 'windows' ]; then
+            ./build.cmd skiptests release && cp bin/Product/$CORECLR_PRODUCT/dbgshim.dll bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
+          else
+            ./build.sh skiptests skipnuget release && cp bin/Product/$CORECLR_PRODUCT/libdbgshim.* bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
+          fi
           cd ..
         else
           # Restore dbgshim library location from cached directory
-          cp coreclr/bin/Product/$CORECLR_PRODUCT/lib/libdbgshim.* coreclr/bin/Product/$CORECLR_PRODUCT
+          cp coreclr/bin/Product/$CORECLR_PRODUCT/lib/*dbgshim.* coreclr/bin/Product/$CORECLR_PRODUCT
         fi
       fi
 
