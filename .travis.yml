@@ -89,7 +89,7 @@ before_install:
       elif [ ${TRAVIS_OS_NAME} = 'linux' ] && [ ! -z "$TIZEN" ]; then
         sudo apt-get update && sudo apt-get install -y --allow-unauthenticated gbs rpm2cpio
       elif [ ${TRAVIS_OS_NAME} = 'windows' ]; then
-        choco install -y visualstudio2017-workload-nativedesktop
+        choco install visualstudio2017community --package-parameters "--allWorkloads --includeRecommended --includeOptional --passive --locale en-US"
       fi
 
 install:
