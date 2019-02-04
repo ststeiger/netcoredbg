@@ -38,6 +38,7 @@ matrix:
           - sourceline: 'deb http://download.tizen.org/tools/latest-release/Ubuntu_14.04/ /'
     - os: osx
       osx_image: xcode9.4
+    - os: windows
 
 env:
   global:
@@ -60,6 +61,8 @@ cache:
     - coreclr/bin/Product/Linux.x64.Release/lib
     - coreclr/bin/Product/OSX.x64.Release/inc
     - coreclr/bin/Product/OSX.x64.Release/lib
+    - coreclr/bin/Product/Windows_NT.x64.Release/inc
+    - coreclr/bin/Product/Windows_NT.x64.Release/lib
     - coreclr/src/inc
     - coreclr/src/pal/inc
     - coreclr/src/pal/inc/rt
@@ -83,33 +86,43 @@ before_install:
         ln -s /usr/local/opt/openssl/lib/pkgconfig/libcrypto.pc /usr/local/lib/pkgconfig/
         ln -s /usr/local/opt/openssl/lib/pkgconfig/libssl.pc /usr/local/lib/pkgconfig/
         ln -s /usr/local/opt/openssl/lib/pkgconfig/openssl.pc /usr/local/lib/pkgconfig/
-      elif [ ! -z "$TIZEN" ]; then
+      elif [ ${TRAVIS_OS_NAME} = 'linux' ] && [ ! -z "$TIZEN" ]; then
         sudo apt-get update && sudo apt-get install -y --allow-unauthenticated gbs rpm2cpio
+      elif [ ${TRAVIS_OS_NAME} = 'windows' ]; then
+        choco install -y visualstudio2017-workload-vctools
       fi
 
 install:
   - |
       if [ -z "$TIZEN" ]; then
-        # Download .NET CLI
-        export DOTNET_INSTALL_DIR="$PWD/.dotnetcli"
-        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel "$CLI_VERSION" --install-dir "$DOTNET_INSTALL_DIR"
-        export PATH="$DOTNET_INSTALL_DIR:$PATH"
+        if [ ${TRAVIS_OS_NAME} != 'windows' ]; then
+          # Download .NET CLI
+          export DOTNET_INSTALL_DIR="$PWD/.dotnetcli"
+          curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel "$CLI_VERSION" --install-dir "$DOTNET_INSTALL_DIR"
+          export PATH="$DOTNET_INSTALL_DIR:$PATH"
+        fi
         # Set CoreCLR binaries output directory name and (for linux) specific compiler versions
         if [ ${TRAVIS_OS_NAME} = 'linux' ]; then
           export CORECLR_PRODUCT=Linux.x64.Release CC=clang-3.9 CXX=clang++-3.9
         elif [ ${TRAVIS_OS_NAME} = 'osx' ]; then
           export CORECLR_PRODUCT=OSX.x64.Release
+        elif [ ${TRAVIS_OS_NAME} = 'windows' ]; then
+          export CORECLR_PRODUCT=Windows_NT.x64.Release
         fi
         # Make CoreCLR sources and binaries available for build script
         if [ ! -f "coreclr/src/inc/.cache_valid" ]; then
           # Invalidate cache and build CoreCLR, put dbgshim library into cached directory
           rm -rf coreclr
           git clone --depth 1 https://github.com/dotnet/coreclr -b "release/$CLI_VERSION" && cd coreclr
-          ./build.sh ninja skiptests skipnuget release && cp bin/Product/$CORECLR_PRODUCT/libdbgshim.* bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
+          if [ ${TRAVIS_OS_NAME} = 'windows' ]; then
+            powershell -NonInteractive -Command '& { .\build.cmd skiptests release ; if(-not $?) { exit 1 } }' && cp bin/Product/$CORECLR_PRODUCT/dbgshim.dll bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
+          else
+            ./build.sh ninja skiptests skipnuget release && cp bin/Product/$CORECLR_PRODUCT/libdbgshim.* bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
+          fi
           cd ..
         else
           # Restore dbgshim library location from cached directory
-          cp coreclr/bin/Product/$CORECLR_PRODUCT/lib/libdbgshim.* coreclr/bin/Product/$CORECLR_PRODUCT
+          cp coreclr/bin/Product/$CORECLR_PRODUCT/lib/*dbgshim.* coreclr/bin/Product/$CORECLR_PRODUCT
         fi
       fi
 
@@ -118,8 +131,13 @@ script:
       if [ -z "$TIZEN" ]; then
         # Build and run tests
         mkdir build && cd build
-        cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCLR_DIR=$PWD/../coreclr -DCMAKE_INSTALL_PREFIX=$PWD/../bin
-        ninja && ninja install
+        if [ ${TRAVIS_OS_NAME} = 'windows' ]; then
+          cmake .. -G "Visual Studio 15 2017 Win64" -DCLR_DIR=$PWD/../coreclr -DCMAKE_INSTALL_PREFIX=$PWD/../bin
+          cmake --build . --config Release --target install
+        else
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCLR_DIR=$PWD/../coreclr -DCMAKE_INSTALL_PREFIX=$PWD/../bin
+          ninja && ninja install
+        fi
         cd ..
         dotnet build tests && dotnet test tests/runner
       else
@@ -154,7 +172,11 @@ before_deploy:
         # Prepare files for deployment
         if [ -z "$TIZEN" ]; then
           mv bin netcoredbg
-          tar cfz netcoredbg-${TRAVIS_OS_NAME}-${TRAVIS_BRANCH}.tar.gz ./netcoredbg/*
+          if [ ${TRAVIS_OS_NAME} = 'windows' ]; then
+            7z a netcoredbg-win64-${TRAVIS_BRANCH}.zip netcoredbg
+          else
+            tar cfz netcoredbg-${TRAVIS_OS_NAME}-${TRAVIS_BRANCH}.tar.gz ./netcoredbg/*
+          fi
         else
           # Generate tar.gz from rpm for Tizen SDK
           RPMFILE=$(find ~/GBS-ROOT/local/repos/target_TM1.unified/armv7l/RPMS -type f -name 'netcoredbg-[0-9]*.rpm')
@@ -178,6 +200,7 @@ deploy:
   file:
     - "*.tar.gz"
     - "*.rpm"
+    - "*.zip"
   file_glob: true
   skip_cleanup: true
   overwrite: true
