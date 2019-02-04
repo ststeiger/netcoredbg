@@ -116,7 +116,7 @@ install:
           rm -rf coreclr
           git clone --depth 1 https://github.com/dotnet/coreclr -b "release/$CLI_VERSION" && cd coreclr
           if [ ${TRAVIS_OS_NAME} = 'windows' ]; then
-            powershell -NonInteractive -Command '& { $env:VS150COMNTOOLS="C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\Common7\\Tools" ; .\build.cmd skiptests release ; if(-not $?) { exit 1 } }' && cp bin/Product/$CORECLR_PRODUCT/dbgshim.dll bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
+            powershell -NonInteractive -Command '& { $env:VS150COMNTOOLS="C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\Common7\\Tools" ; .\build.cmd skiptests release ; if(-not $?) { exit 1 } }' && cp bin/Product/$CORECLR_PRODUCT/dbgshim.dll bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
           else
             ./build.sh ninja skiptests skipnuget release && cp bin/Product/$CORECLR_PRODUCT/libdbgshim.* bin/Product/$CORECLR_PRODUCT/lib && touch src/inc/.cache_valid
           fi
