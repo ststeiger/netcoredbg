@@ -38,7 +38,7 @@ include(clrdefinitions.cmake)
 if (NOT IS_DIRECTORY "${CLR_DIR}")
     message(FATAL_ERROR "Unable to find CoreCLR directory")
 endif()
-
+message(STATUS "CLR_BIN_DIR=${CLR_BIN_DIR}")
 set(CLR_CONFIGURATION_TYPES "Debug;Checked;Release;RelWithDebInfo" CACHE STRING "")
 
 if ("${CLR_BIN_DIR}" STREQUAL "")

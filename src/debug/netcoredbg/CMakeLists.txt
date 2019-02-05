@@ -1,15 +1,32 @@
 # CoreCLR libraries
 
-set(CORECLR_PRODUCT ${CLR_DIR}/bin/Product/${CORECLR_PLATFORM})
-
 if (NOT DBGSHIM_DIR STREQUAL "")
     add_definitions(-DDBGSHIM_DIR="${DBGSHIM_DIR}")
 else()
-    set(DBGSHIM_LOCATION ${CLR_BIN_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}dbgshim${CMAKE_SHARED_LIBRARY_SUFFIX})
+    find_library(DBGSHIM_LOCATION dbgshim PATHS "${CLR_BIN_DIR}/shared/Microsoft.NETCore.App/*" NO_DEFAULT_PATH)
+    message(STATUS "DBGSHIM_LOCATION=${DBGSHIM_LOCATION}")
 endif()
 
-add_library(corguids STATIC IMPORTED)
-set_target_properties(corguids PROPERTIES IMPORTED_LOCATION ${CLR_BIN_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}corguids${CMAKE_STATIC_LIBRARY_SUFFIX})
+set(CORGUIDS_SOURCES
+  ${CLR_DIR}/src/pal/prebuilt/idl/cordebug_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/xcordebug_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/clrdata_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/clrinternal_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/xclrdata_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/corprof_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/corpub_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/gchost_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/mscorsvc_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/clrprivappxhosting_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/clrprivbinding_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/clrprivhosting_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/clrprivruntimebinders_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/corsym_i.cpp
+  ${CLR_DIR}/src/pal/prebuilt/idl/sospriv_i.cpp
+)
+add_compile_options(-Wno-extra-tokens)
+add_compile_options(-D_MIDL_USE_GUIDDEF_)
+add_library(corguids STATIC ${CORGUIDS_SOURCES})
 
 if (NOT WIN32)
     include_directories(${CLR_DIR}/src/pal/inc)
@@ -76,7 +93,8 @@ if (BUILD_MANAGED)
     set(SYMBOLREADER_DLL_NAME SymbolReader.dll)
     set(DOTNET_BUILD_RESULT ${CMAKE_CURRENT_BINARY_DIR}/${SYMBOLREADER_DLL_NAME})
 
-    find_program(DOTNETCLI dotnet PATHS ENV PATH "${CLR_DIR}/Tools/dotnetcli")
+    find_program(DOTNETCLI dotnet PATHS "${CLR_BIN_DIR}" ENV PATH NO_DEFAULT_PATH)
+    message(STATUS "DOTNETCLI=${DOTNETCLI}")
 
     add_custom_command(OUTPUT ${DOTNET_BUILD_RESULT}
       COMMAND ${DOTNETCLI} publish ${SYMBOLREADER_PROJECT} -o ${CMAKE_CURRENT_BINARY_DIR} /p:BaseIntermediateOutputPath=${CMAKE_CURRENT_BINARY_DIR}/obj/
