@@ -1,32 +1,21 @@
-# CoreCLR libraries
+# Locate dbgshim library
 
 if (NOT DBGSHIM_DIR STREQUAL "")
     add_definitions(-DDBGSHIM_DIR="${DBGSHIM_DIR}")
 else()
-    find_library(DBGSHIM_LOCATION dbgshim PATHS "${CLR_BIN_DIR}/shared/Microsoft.NETCore.App/*" NO_DEFAULT_PATH)
-    message(STATUS "DBGSHIM_LOCATION=${DBGSHIM_LOCATION}")
+    find_file(DBGSHIM_LOCATION NAMES dbgshim.dll libdbgshim.so libdbgshim.dylib PATHS "${CLR_BIN_DIR}/shared/Microsoft.NETCore.App/*" NO_DEFAULT_PATH)
 endif()
 
-set(CORGUIDS_SOURCES
-  ${CLR_DIR}/src/pal/prebuilt/idl/cordebug_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/xcordebug_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/clrdata_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/clrinternal_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/xclrdata_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/corprof_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/corpub_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/gchost_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/mscorsvc_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/clrprivappxhosting_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/clrprivbinding_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/clrprivhosting_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/clrprivruntimebinders_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/corsym_i.cpp
-  ${CLR_DIR}/src/pal/prebuilt/idl/sospriv_i.cpp
-)
-add_compile_options(-Wno-extra-tokens)
+# Build corguids static library from coreclr source files
+
+if (NOT WIN32)
+    add_compile_options(-Wno-extra-tokens)
+endif()
 add_compile_options(-D_MIDL_USE_GUIDDEF_)
+file(GLOB CORGUIDS_SOURCES "${CLR_DIR}/src/pal/prebuilt/idl/*_i.cpp")
 add_library(corguids STATIC ${CORGUIDS_SOURCES})
+
+# Include coreclr headers
 
 if (NOT WIN32)
     include_directories(${CLR_DIR}/src/pal/inc)
@@ -40,7 +29,7 @@ include_directories(${CLR_DIR}/src/dlls/dbgshim)
 include_directories(${CLR_DIR}/src/coreclr/hosts/inc)
 include_directories(${CLR_DIR}/src/ToolBox/SOS/Strike)
 
-# NetCoreDBG
+# Build native part of the debugger
 
 set(netcoredbg_SRC
     main.cpp
@@ -86,7 +75,7 @@ if (DBGSHIM_LOCATION)
     install(FILES ${DBGSHIM_LOCATION} DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
 
-# SymbolReader
+# Build managed part of the debugger (SymbolReader.dll)
 
 if (BUILD_MANAGED)
     set(SYMBOLREADER_PROJECT ${CMAKE_CURRENT_SOURCE_DIR}/SymbolReader.csproj)
@@ -94,7 +83,6 @@ if (BUILD_MANAGED)
     set(DOTNET_BUILD_RESULT ${CMAKE_CURRENT_BINARY_DIR}/${SYMBOLREADER_DLL_NAME})
 
     find_program(DOTNETCLI dotnet PATHS "${CLR_BIN_DIR}" ENV PATH NO_DEFAULT_PATH)
-    message(STATUS "DOTNETCLI=${DOTNETCLI}")
 
     add_custom_command(OUTPUT ${DOTNET_BUILD_RESULT}
       COMMAND ${DOTNETCLI} publish ${SYMBOLREADER_PROJECT} -o ${CMAKE_CURRENT_BINARY_DIR} /p:BaseIntermediateOutputPath=${CMAKE_CURRENT_BINARY_DIR}/obj/

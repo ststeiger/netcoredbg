@@ -35,35 +35,12 @@ include(platformdefinitions.cmake) # from root
 include(compileoptions.cmake) # disabled setting arm compiler flags in Tizen build
 include(clrdefinitions.cmake)
 
-if (NOT IS_DIRECTORY "${CLR_DIR}")
-    message(FATAL_ERROR "Unable to find CoreCLR directory")
+# Basic checks for coreclr paths
+if (NOT IS_DIRECTORY "${CLR_DIR}/src/pal")
+    message(FATAL_ERROR "Invalid CoreCLR source directory")
 endif()
-message(STATUS "CLR_BIN_DIR=${CLR_BIN_DIR}")
-set(CLR_CONFIGURATION_TYPES "Debug;Checked;Release;RelWithDebInfo" CACHE STRING "")
-
-if ("${CLR_BIN_DIR}" STREQUAL "")
-    if (WIN32)
-        set(TARGET_OS_NAME "Windows_NT")
-    elseif (CMAKE_SYSTEM_NAME STREQUAL Darwin)
-        set(TARGET_OS_NAME "OSX")
-    elseif (CMAKE_SYSTEM_NAME STREQUAL Linux)
-        set(TARGET_OS_NAME "Linux")
-    endif()
-
-    # TODO: Search for CMAKE_BUILD_TYPE configuration first
-    # TODO: CLR_CMAKE_TARGET_ARCH may be armel
-    foreach(CONFIG IN LISTS CLR_CONFIGURATION_TYPES)
-        set(CLR_BIN_DIR ${CLR_DIR}/bin/Product/${TARGET_OS_NAME}.${CLR_CMAKE_TARGET_ARCH}.${CONFIG})
-        if (IS_DIRECTORY "${CLR_BIN_DIR}")
-            break()
-        endif()
-    endforeach()
-
-    if (IS_DIRECTORY "${CLR_BIN_DIR}")
-        message(STATUS "CoreCLR bin directory: " ${CLR_BIN_DIR})
-    else()
-        message(FATAL_ERROR "Unable to find CoreCLR bin directory")
-    endif()
+if (NOT IS_DIRECTORY "${CLR_BIN_DIR}/shared/Microsoft.NETCore.App")
+    message(FATAL_ERROR "Invalid .NET SDK directory")
 endif()
 
 add_subdirectory(src/debug/netcoredbg)
