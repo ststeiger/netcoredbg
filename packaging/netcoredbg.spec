@@ -87,7 +87,7 @@ cmake ../netcoredbg \
     -DCMAKE_INSTALL_PREFIX=%{install_prefix} \
     -DCMAKE_BUILD_TYPE=Release \
     -DCLR_CMAKE_LINUX_ID=tizen \
-    -DDBGSHIM_DIR=$NETCOREAPPDIR \
+    -DDBGSHIM_RUNTIME_DIR=$NETCOREAPPDIR \
     -DBUILD_MANAGED=OFF
 make %{?jobs:-j%jobs}
 

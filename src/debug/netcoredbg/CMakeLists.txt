@@ -1,7 +1,7 @@
 # Locate dbgshim library
 
-if (NOT DBGSHIM_DIR STREQUAL "")
-    add_definitions(-DDBGSHIM_DIR="${DBGSHIM_DIR}")
+if (NOT DBGSHIM_RUNTIME_DIR STREQUAL "")
+    add_definitions(-DDBGSHIM_RUNTIME_DIR="${DBGSHIM_RUNTIME_DIR}")
 else()
     find_file(DBGSHIM_LOCATION NAMES dbgshim.dll libdbgshim.so libdbgshim.dylib PATHS "${DOTNET_DIR}/shared/Microsoft.NETCore.App/*" NO_DEFAULT_PATH)
 endif()
