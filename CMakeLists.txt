@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 2.8.12.2)
 project(netcoredbg)
 
-set(CLR_DIR "${CMAKE_SOURCE_DIR}/../coreclr" CACHE FILEPATH "Path to coreclr directory")
-set(CLR_BIN_DIR "" CACHE FILEPATH "Path to coreclr bin directory")
+set(CORECLR_DIR "" CACHE FILEPATH "Path to CoreCLR source directory")
+set(DOTNET_DIR "" CACHE FILEPATH "Path to .NET SDK directory")
+set(CORECLR_BRANCH "release/2.1" CACHE STRING "CoreCLR source branch")
+set(DOTNET_CHANNEL "2.1" CACHE STRING ".NET SDK channel")
 set(BUILD_MANAGED ON CACHE BOOL "Build managed part")
 set(DBGSHIM_DIR "" CACHE FILEPATH "Path to dbgshim library directory")
 
@@ -35,11 +37,13 @@ include(platformdefinitions.cmake) # from root
 include(compileoptions.cmake) # disabled setting arm compiler flags in Tizen build
 include(clrdefinitions.cmake)
 
-# Basic checks for coreclr paths
-if (NOT IS_DIRECTORY "${CLR_DIR}/src/pal")
+include(fetchdeps.cmake)
+
+# Basic checks for valid paths
+if (NOT IS_DIRECTORY "${CORECLR_DIR}/src/pal")
     message(FATAL_ERROR "Invalid CoreCLR source directory")
 endif()
-if (NOT IS_DIRECTORY "${CLR_BIN_DIR}/shared/Microsoft.NETCore.App")
+if (NOT IS_DIRECTORY "${DOTNET_DIR}/shared/Microsoft.NETCore.App")
     message(FATAL_ERROR "Invalid .NET SDK directory")
 endif()
 

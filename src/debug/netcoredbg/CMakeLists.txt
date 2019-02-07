@@ -3,7 +3,7 @@
 if (NOT DBGSHIM_DIR STREQUAL "")
     add_definitions(-DDBGSHIM_DIR="${DBGSHIM_DIR}")
 else()
-    find_file(DBGSHIM_LOCATION NAMES dbgshim.dll libdbgshim.so libdbgshim.dylib PATHS "${CLR_BIN_DIR}/shared/Microsoft.NETCore.App/*" NO_DEFAULT_PATH)
+    find_file(DBGSHIM_LOCATION NAMES dbgshim.dll libdbgshim.so libdbgshim.dylib PATHS "${DOTNET_DIR}/shared/Microsoft.NETCore.App/*" NO_DEFAULT_PATH)
 endif()
 
 # Build corguids static library from coreclr source files
@@ -12,22 +12,22 @@ if (NOT WIN32)
     add_compile_options(-Wno-extra-tokens)
 endif()
 add_compile_options(-D_MIDL_USE_GUIDDEF_)
-file(GLOB CORGUIDS_SOURCES "${CLR_DIR}/src/pal/prebuilt/idl/*_i.cpp")
+file(GLOB CORGUIDS_SOURCES "${CORECLR_DIR}/src/pal/prebuilt/idl/*_i.cpp")
 add_library(corguids STATIC ${CORGUIDS_SOURCES})
 
 # Include coreclr headers
 
 if (NOT WIN32)
-    include_directories(${CLR_DIR}/src/pal/inc)
-    include_directories(${CLR_DIR}/src/pal/inc/rt)
-    include_directories(${CLR_DIR}/src/pal/prebuilt/inc)
+    include_directories(${CORECLR_DIR}/src/pal/inc)
+    include_directories(${CORECLR_DIR}/src/pal/inc/rt)
+    include_directories(${CORECLR_DIR}/src/pal/prebuilt/inc)
 endif()
-include_directories(${CLR_DIR}/src/inc)
-include_directories(${CLR_DIR}/src/debug/inc)
-include_directories(${CLR_DIR}/src/debug/shim)
-include_directories(${CLR_DIR}/src/dlls/dbgshim)
-include_directories(${CLR_DIR}/src/coreclr/hosts/inc)
-include_directories(${CLR_DIR}/src/ToolBox/SOS/Strike)
+include_directories(${CORECLR_DIR}/src/inc)
+include_directories(${CORECLR_DIR}/src/debug/inc)
+include_directories(${CORECLR_DIR}/src/debug/shim)
+include_directories(${CORECLR_DIR}/src/dlls/dbgshim)
+include_directories(${CORECLR_DIR}/src/coreclr/hosts/inc)
+include_directories(${CORECLR_DIR}/src/ToolBox/SOS/Strike)
 
 # Build native part of the debugger
 
@@ -82,7 +82,7 @@ if (BUILD_MANAGED)
     set(SYMBOLREADER_DLL_NAME SymbolReader.dll)
     set(DOTNET_BUILD_RESULT ${CMAKE_CURRENT_BINARY_DIR}/${SYMBOLREADER_DLL_NAME})
 
-    find_program(DOTNETCLI dotnet PATHS "${CLR_BIN_DIR}" ENV PATH NO_DEFAULT_PATH)
+    find_program(DOTNETCLI dotnet PATHS "${DOTNET_DIR}" ENV PATH NO_DEFAULT_PATH)
 
     add_custom_command(OUTPUT ${DOTNET_BUILD_RESULT}
       COMMAND ${DOTNETCLI} publish ${SYMBOLREADER_PROJECT} -o ${CMAKE_CURRENT_BINARY_DIR} /p:BaseIntermediateOutputPath=${CMAKE_CURRENT_BINARY_DIR}/obj/
