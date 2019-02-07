@@ -36,7 +36,7 @@ if ("${CORECLR_DIR}" STREQUAL "")
 endif()
 
 # Fetch .NET SDK binaries if necessary
-if ("${DOTNET_DIR}" STREQUAL "")
+if ("${DOTNET_DIR}" STREQUAL "" AND (("${DBGSHIM_RUNTIME_DIR}" STREQUAL "") OR ${BUILD_MANAGED}))
     set(DOTNET_DIR ${CMAKE_CURRENT_SOURCE_DIR}/.dotnet)
 
     if (WIN32)
