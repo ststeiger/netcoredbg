@@ -41,7 +41,7 @@ if ("${DOTNET_DIR}" STREQUAL "" AND (("${DBGSHIM_RUNTIME_DIR}" STREQUAL "") OR $
 
     if (WIN32)
         execute_process(
-            COMMAND powershell -Command "(new-object System.Net.WebClient).DownloadFile('https://dot.net/v1/dotnet-install.ps1', '${CMAKE_CURRENT_BINARY_DIR}/dotnet-install.ps1')"
+            COMMAND powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 ; (new-object System.Net.WebClient).DownloadFile('https://dot.net/v1/dotnet-install.ps1', '${CMAKE_CURRENT_BINARY_DIR}/dotnet-install.ps1')"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             RESULT_VARIABLE retcode)
         if (NOT "${retcode}" STREQUAL "0")
