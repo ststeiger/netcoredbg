@@ -48,7 +48,7 @@ if ("${DOTNET_DIR}" STREQUAL "" AND (("${DBGSHIM_RUNTIME_DIR}" STREQUAL "") OR $
             message(FATAL_ERROR "Fatal error when downloading dotnet install script")
         endif()
         execute_process(
-            COMMAND powershell -File "${CMAKE_CURRENT_BINARY_DIR}/dotnet-install.ps1" -Channel "${DOTNET_CHANNEL}" -InstallDir "${DOTNET_DIR}" -Verbose
+            COMMAND powershell -File "${CMAKE_CURRENT_BINARY_DIR}/dotnet-install.ps1" -Channel "${DOTNET_CHANNEL}" -InstallDir "${DOTNET_DIR}" -Architecture x64 -Verbose
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             RESULT_VARIABLE retcode)
         if (NOT "${retcode}" STREQUAL "0")
