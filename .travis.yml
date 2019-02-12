@@ -3,22 +3,20 @@ matrix:
     - os: windows
   include:
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       addons:
         apt:
           sources:
-          - ubuntu-toolchain-r-test
-          - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.9 main'
-            key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
+          - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-5.0 main'
+            key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
           - git
           - ninja-build
           - cmake
-          - llvm-3.9
-          - clang-3.9
-          - g++-5
-      env: MATRIX_EVAL="CC=clang-3.9 CXX=clang++-3.9"
+          - llvm-5.0
+          - clang-5.0
+      env: MATRIX_EVAL="CC=clang-5.0 CXX=clang++-5.0"
     - os: linux
       dist: trusty
       sudo: required
