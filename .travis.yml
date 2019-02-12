@@ -18,6 +18,7 @@ matrix:
           - llvm-3.9
           - clang-3.9
           - g++-5
+      env: CC=clang-3.9 CXX=clang++-3.9
     - os: linux
       dist: trusty
       sudo: required
@@ -66,9 +67,6 @@ script:
           cmake .. -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=$PWD/../bin
           cmake --build . --config Release --target install
         else
-          if [ ${TRAVIS_OS_NAME} = 'linux' ]; then
-            export CC=clang-3.9 CXX=clang++-3.9
-          fi
           cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PWD/../bin
           ninja && ninja install
         fi
